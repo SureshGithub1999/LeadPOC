@@ -14,7 +14,7 @@ module.exports = defineConfig([
             ...auraConfig.configs.locker
         ]
     },
-
+//SIva
     // LWC configuration
     {
         files: ['**/lwc/**/*.js'],
