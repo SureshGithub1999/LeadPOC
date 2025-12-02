@@ -7,6 +7,7 @@ const globals = require('globals');
 
 module.exports = defineConfig([
     // Aura configuration
+    //teja
     {
         files: ['**/aura/**/*.js'],
         extends: [
