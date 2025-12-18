@@ -1,0 +1,126 @@
+<apex:page standardController="Opportunity"
+           extensions="OpportunityInventoryController"
+           renderAs="pdf"
+           showHeader="false"
+           sidebar="false"
+           applyHtmlTag="false"
+           applyBodyTag="false">
+
+<html>
+<head>
+<style type="text/css">
+body {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+}
+
+.header-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.header-table td {
+    border: 1px solid #000;
+    padding: 6px;
+}
+
+.label {
+    background-color: #2bb3b3;
+    color: #ffffff;
+    font-weight: bold;
+    width: 25%;
+}
+
+.value {
+    width: 75%;
+}
+
+.title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.inventory-table th {
+    background-color: #000000;
+    color: #ffffff;
+    border: 1px solid #000000;
+    padding: 6px;
+    font-size: 11px;
+}
+
+.inventory-table td {
+    border: 1px solid #000000;
+    padding: 6px;
+}
+
+.alt-row {
+    background-color: #e6e6e6;
+}
+</style>
+</head>
+
+<body>
+
+<table class="header-table">
+    <tr>
+        <td class="label">Opportunity Name</td>
+        <td class="value">{!Opportunity.Name}</td>
+    </tr>
+    <tr>
+        <td class="label">Opportunity Owner</td>
+        <td class="value">{!Opportunity.Owner.Name}</td>
+    </tr>
+    <tr>
+        <td class="label">Account Name</td>
+        <td class="value">{!Opportunity.Account.Name}</td>
+    </tr>
+</table>
+
+<div class="title">Inventory Receipt</div>
+
+<table class="inventory-table">
+    <tr>
+        <th>S.No</th>
+        <th>Product Name</th>
+      <!--  <th>Warehouse</th>
+        <th>Reserved Qty</th>
+        -->
+        <th>Stock Status</th>
+        <th>Available Quantity</th>
+        <th>Unit Cost</th>
+        <th>Total Stock Value</th>
+       
+    </tr>
+
+    <apex:variable var="i" value="{!1}" />
+
+    <apex:repeat value="{!inventoryList}" var="inv">
+        <tr class="{!IF(MOD(i,2)=0,'alt-row','')}">
+            <td>{!i}</td>
+            <td>{!inv.Product__r.Name}</td> 
+           <!-- <td>{!inv.Warehouse__c}</td>
+            <td>{!inv.Reserved_Quantity__c}</td> -->
+            <td>{!inv.Stock_Status__c}</td>
+            <td>{!inv.Available_Quantity__c}</td>
+            <td>{!inv.Unit_Cost__c}</td>
+            <td>{!inv.Total_Stock_Value__c}</td>
+      
+        </tr>
+        <apex:variable var="i" value="{!i + 1}" />
+    </apex:repeat>
+
+</table>
+
+</body>
+</html>
+
+</apex:page>

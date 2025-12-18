@@ -1,0 +1,62 @@
+<template>
+    <lightning-card>
+
+        <!-- standard Salesforce title -->
+        <span slot="title" class="slds-text-heading_small">
+            <b> Upload Files </b>
+        </span>
+
+        <!-- Remove extra spacing under header -->
+        <div class="slds-p-horizontal_small slds-p-bottom_small slds-m-top_none">
+
+            <!-- Upload input -->
+            <lightning-file-upload
+                name="fileUploader"
+                record-id={recordId}
+                onuploadfinished={handleUploadFinished}
+                multiple>
+            </lightning-file-upload>
+
+            <!-- File List -->
+            <template if:true={fileList.length}>
+                <template for:each={fileList} for:item="file">
+
+                    <div key={file.documentId}
+                         class="slds-box slds-box_xx-small slds-m-top_x-small slds-theme_default">
+
+                        <div class="slds-grid slds-grid_align-spread slds-m-bottom_xx-small">
+
+                            <a href={file.downloadUrl}
+                               target="_blank"
+                               class="slds-truncate slds-text-link"
+                               title={file.title}>
+                                {file.title}
+                            </a>
+
+                            <lightning-button-icon
+                                icon-name="utility:close"
+                                alternative-text="Delete"
+                                title="Delete File"
+                                onclick={handleDelete}
+                                data-id={file.documentId}
+                                size="small"
+                                variant="bare">
+                            </lightning-button-icon>
+
+                        </div>
+
+                        <div class="slds-text-body_small">
+                            Type: .{file.fileType}
+                        </div>
+                        <div class="slds-text-body_small">
+                            Size: {file.size}
+                        </div>
+
+                    </div>
+
+                </template>
+            </template>
+
+        </div>
+    </lightning-card>
+</template>
