@@ -10,7 +10,8 @@
  * - Uses System.runAs()
  * - Includes assertion messages
  * - Avoids seeAllData=true
- * @auther : vaibhav kadam
+ * @auther : vaibhav kadam 
+    * @date  : 17June 2025
  */
 @IsTest
 public class AutoConvertLead_WhenQualified_Test {
