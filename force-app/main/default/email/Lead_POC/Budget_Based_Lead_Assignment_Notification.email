@@ -1,0 +1,21 @@
+Hello {!User.FirstName},
+
+A Lead has been automatically assigned to your Queue based on the Estimated Budget criteria.
+
+Lead Details :
+-------------------------
+Lead Name          : {!Lead.Name}
+Company             : {!Lead.Company}
+Email                    : {!Lead.Email}
+Phone                   : {!Lead.Phone}
+Estimated Budget : {!Lead.Estimated_Budget__c}
+
+Please review the Lead and take the appropriate action at the earliest.
+
+You can access the Lead record using the link below:
+{!Lead.Link}
+
+If you have any questions, please contact your Sales Manager.
+
+Thank you,
+Salesforce Lead Management System
