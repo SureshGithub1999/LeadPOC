@@ -1,0 +1,69 @@
+<template>
+    <lightning-quick-action-panel header="Add Configuration Product">
+
+        <template if:true={loading}>
+            <lightning-spinner size="small"></lightning-spinner>
+        </template>
+
+        <template if:false={loading}>
+
+            <!-- PRODUCT TYPE -->
+            <lightning-combobox
+                name="prodType"
+                label="Product Type"
+                options={productTypeOptions}
+                value={selectedProductType}
+                placeholder="Select Type"
+                onchange={handleTypeChange}>
+            </lightning-combobox>
+
+            <!-- DYNAMIC FIELDS -->
+            <template if:true={dynamicFields.length}>
+                <template for:each={dynamicFields} for:item="f">
+                    <div key={f.apiName} class="slds-m-top_small">
+                        <lightning-input
+                            data-field={f.apiName}
+                            label={f.label}
+                            value={f.value}
+                            required={f.required}
+                            onchange={handleFieldChange}>
+                        </lightning-input>
+                    </div>
+                </template>
+            </template>
+
+            <!-- QUANTITY -->
+            <lightning-input
+                class="slds-m-top_small"
+                type="number"
+                label="Quantity"
+                min="1"
+                value={quantity}
+                onchange={handleQtyChange}
+                required>
+            </lightning-input>
+
+<lightning-input
+    type="number"
+    label="Sales Price"
+    value={salesPrice}
+    onchange={handleSalesPriceChange}>
+</lightning-input>
+
+<lightning-input
+    type="number"
+    label="Total Price"
+    value={totalPrice}
+    disabled>
+</lightning-input>
+
+
+        </template>
+
+        <div slot="footer">
+            <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
+            <lightning-button label="Add Product" variant="brand" onclick={handleSubmit}></lightning-button>
+        </div>
+
+    </lightning-quick-action-panel>
+</template>
