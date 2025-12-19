@@ -152,16 +152,31 @@ public with sharing class AddConfigProductController {
             /* 4️⃣ MUST create Standard Pricebook Entry */
             ensureStandardPricebookEntry(product.Id, unitPrice);
 
-            /* 5️⃣ Create Pricebook Entry for Opportunity Pricebook */
-            PricebookEntry pbe = new PricebookEntry(
-                Pricebook2Id = opp.Pricebook2Id,
-                Product2Id   = product.Id,
-                UnitPrice    = unitPrice,
-                IsActive     = true
-            );
-            Database.insert(pbe, AccessLevel.USER_MODE);
+            /* 5️⃣ Get or Create Pricebook Entry for Opportunity Pricebook */
+PricebookEntry pbe;
 
-            /* 6️⃣ Create Opportunity Line Item */
+List<PricebookEntry> existingPbe = [
+    SELECT Id, UnitPrice
+    FROM PricebookEntry
+    WHERE Product2Id = :product.Id
+    AND Pricebook2Id = :opp.Pricebook2Id
+    WITH USER_MODE
+    LIMIT 1
+];
+
+if (!existingPbe.isEmpty()) {
+    pbe = existingPbe[0]; // ✅ reuse existing price
+} else {
+    pbe = new PricebookEntry(
+        Pricebook2Id = opp.Pricebook2Id,
+        Product2Id   = product.Id,
+        UnitPrice    = unitPrice,
+        IsActive     = true
+    );
+    Database.insert(pbe, AccessLevel.USER_MODE);
+}
+
+ /* 6️⃣ Create Opportunity Line Item */
             OpportunityLineItem oli = new OpportunityLineItem(
                 OpportunityId     = opp.Id,
                 PricebookEntryId  = pbe.Id,
