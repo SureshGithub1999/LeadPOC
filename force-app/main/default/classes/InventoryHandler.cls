@@ -36,28 +36,72 @@ public with sharing class InventoryHandler {
      * @param newMap New Opportunity values
      */
     public static void handlePOReceived(
-        Map<Id, Opportunity> oldMap,
-        Map<Id, Opportunity> newMap
-    ) {
-        if (!canProcessPOReceived(oldMap, newMap)) {
-            return;
-        }
+    Map<Id, Opportunity> oldMap,
+    Map<Id, Opportunity> newMap
+) {
+    Set<Id> poOppIds = new Set<Id>();
 
-        Set<Id> oppIds = getPOReceivedOpps(oldMap, newMap);
-        if (oppIds.isEmpty()) {
-            return;
-        }
-
-        Set<Id> productIds = getProductsFromOpps(oppIds);
-        if (productIds.isEmpty()) {
-            return;
-        }
-
-        List<Inventory__c> updates = buildPOReceivedUpdates(productIds);
-        if (!updates.isEmpty()) {
-            update updates;
+    for (Opportunity opp : newMap.values()) {
+        if (
+            opp.StageName == 'PO Received' &&
+            oldMap.get(opp.Id).StageName != 'PO Received'
+        ) {
+            poOppIds.add(opp.Id);
         }
     }
+
+    if (poOppIds.isEmpty()) return;
+
+    // 🔥 Product-wise quantity from ONLY PO Received Opps
+    Map<Id, Decimal> productQtyMap = new Map<Id, Decimal>();
+
+    for (OpportunityLineItem oli : [
+        SELECT Product2Id, Quantity
+        FROM OpportunityLineItem
+        WHERE OpportunityId IN :poOppIds
+    ]) {
+        if (oli.Product2Id != null && oli.Quantity != null) {
+            productQtyMap.put(
+                oli.Product2Id,
+                (productQtyMap.containsKey(oli.Product2Id)
+                    ? productQtyMap.get(oli.Product2Id)
+                    : 0
+                ) + oli.Quantity
+            );
+        }
+    }
+
+    if (productQtyMap.isEmpty()) return;
+
+    List<Inventory__c> updates = new List<Inventory__c>();
+
+    for (Inventory__c inv : [
+        SELECT Id, Product__c,
+               In_Transit_Quantity__c,
+               Available_Quantity__c
+        FROM Inventory__c
+        WHERE Product__c IN :productQtyMap.keySet()
+        FOR UPDATE
+    ]) {
+        Decimal qty = productQtyMap.get(inv.Product__c);
+
+        inv.In_Transit_Quantity__c =
+            (inv.In_Transit_Quantity__c == null ? 0 : inv.In_Transit_Quantity__c)
+            - qty;
+
+        inv.Available_Quantity__c =
+            (inv.Available_Quantity__c == null ? 0 : inv.Available_Quantity__c)
+            - qty;
+
+        updates.add(inv);
+    }
+
+    if (!updates.isEmpty()) {
+        update updates;
+    }
+}
+
+
 
     /* =====================================================
        VALIDATION
@@ -108,22 +152,40 @@ public with sharing class InventoryHandler {
     }
 
     private static List<Inventory__c> buildInTransitUpdates(
-        List<OpportunityLineItem> olis,
-        Map<Id, Inventory__c> invMap
-    ) {
-        List<Inventory__c> updates = new List<Inventory__c>();
+    List<OpportunityLineItem> olis,
+    Map<Id, Inventory__c> invMap
+) {
+    Map<Id, Inventory__c> updatesMap = new Map<Id, Inventory__c>();
 
-        for (OpportunityLineItem oli : olis) {
-            Inventory__c inv = invMap.get(oli.Product2Id);
-            if (inv != null) {
-                Decimal current =
-                    inv.In_Transit_Quantity__c == null ? 0 : inv.In_Transit_Quantity__c;
-                inv.In_Transit_Quantity__c = current + oli.Quantity;
-                updates.add(inv);
-            }
+    for (OpportunityLineItem oli : olis) {
+        if (oli.Product2Id == null || oli.Quantity == null) {
+            continue;
         }
-        return updates;
+
+        Inventory__c inv;
+
+        if (invMap.containsKey(oli.Product2Id)) {
+            inv = invMap.get(oli.Product2Id);
+        } else {
+            // 🔥 CREATE Inventory if not exists
+            inv = new Inventory__c(
+                Product__c = oli.Product2Id,
+                In_Transit_Quantity__c = 0,
+                Available_Quantity__c = 0
+            );
+            invMap.put(oli.Product2Id, inv);
+        }
+
+        Decimal current =
+            inv.In_Transit_Quantity__c == null ? 0 : inv.In_Transit_Quantity__c;
+
+        inv.In_Transit_Quantity__c = current + oli.Quantity;
+        updatesMap.put(inv.Product__c, inv);
     }
+
+    return updatesMap.values();
+}
+
 
     private static Set<Id> getPOReceivedOpps(
         Map<Id, Opportunity> oldMap,
@@ -175,4 +237,5 @@ public with sharing class InventoryHandler {
         }
         return updates;
     }
+
 }

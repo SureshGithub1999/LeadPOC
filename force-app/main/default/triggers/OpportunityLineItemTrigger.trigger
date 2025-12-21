@@ -1,3 +1,7 @@
 trigger OpportunityLineItemTrigger on OpportunityLineItem (after insert) {
-    InventoryHandler.updateInTransit(Trigger.new);
+
+    if (Trigger.isAfter && Trigger.isInsert) {
+        InventoryHandler.updateInTransit(Trigger.new);
+    }
+
 }

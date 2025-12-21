@@ -1,6 +1,7 @@
 trigger OpportunityTrigger on Opportunity (after update) {
-    InventoryHandler.handlePOReceived(
-        Trigger.oldMap,
-        Trigger.newMap
-    );
+
+    if (Trigger.isAfter && Trigger.isUpdate) {
+        InventoryHandler.handlePOReceived(Trigger.oldMap, Trigger.newMap);
+    }
+
 }
