@@ -13,22 +13,27 @@ public with sharing class InventoryHandler {
      */
     public static void updateInTransit(List<OpportunityLineItem> olis) {
 
-        if (!canProcessInTransit(olis)) {
-            return;
-        }
+    if (!canProcessInTransit(olis)) return;
 
-        Set<Id> productIds = extractProductIds(olis);
-        if (productIds.isEmpty()) {
-            return;
-        }
+    Set<Id> productIds = extractProductIds(olis);
+    if (productIds.isEmpty()) return;
 
-        Map<Id, Inventory__c> invMap = loadInventory(productIds);
-        List<Inventory__c> updates = buildInTransitUpdates(olis, invMap);
+    Map<Id, Inventory__c> invMap = loadInventory(productIds);
 
-        if (!updates.isEmpty()) {
-            update updates;
-        }
+    List<Inventory__c> toInsert = new List<Inventory__c>();
+    List<Inventory__c> toUpdate = new List<Inventory__c>();
+
+    buildInTransitUpdates(olis, invMap, toInsert, toUpdate);
+
+    if (!toInsert.isEmpty()) {
+        insert toInsert; // ✅ NEW records
     }
+
+    if (!toUpdate.isEmpty()) {
+        update toUpdate; // ✅ EXISTING records
+    }
+}
+
 
     /**
      * @description Trigger entry for PO Received stage
@@ -151,40 +156,40 @@ public with sharing class InventoryHandler {
         return result;
     }
 
-    private static List<Inventory__c> buildInTransitUpdates(
+    private static void buildInTransitUpdates(
     List<OpportunityLineItem> olis,
-    Map<Id, Inventory__c> invMap
+    Map<Id, Inventory__c> invMap,
+    List<Inventory__c> toInsert,
+    List<Inventory__c> toUpdate
 ) {
-    Map<Id, Inventory__c> updatesMap = new Map<Id, Inventory__c>();
-
     for (OpportunityLineItem oli : olis) {
-        if (oli.Product2Id == null || oli.Quantity == null) {
-            continue;
-        }
+        if (oli.Product2Id == null || oli.Quantity == null) continue;
 
         Inventory__c inv;
 
         if (invMap.containsKey(oli.Product2Id)) {
             inv = invMap.get(oli.Product2Id);
         } else {
-            // 🔥 CREATE Inventory if not exists
             inv = new Inventory__c(
                 Product__c = oli.Product2Id,
                 In_Transit_Quantity__c = 0,
                 Available_Quantity__c = 0
             );
             invMap.put(oli.Product2Id, inv);
+            toInsert.add(inv); // ✅ NEW RECORD
         }
 
         Decimal current =
             inv.In_Transit_Quantity__c == null ? 0 : inv.In_Transit_Quantity__c;
 
         inv.In_Transit_Quantity__c = current + oli.Quantity;
-        updatesMap.put(inv.Product__c, inv);
-    }
 
-    return updatesMap.values();
+        if (inv.Id != null) {
+            toUpdate.add(inv); // ✅ EXISTING RECORD
+        }
+    }
 }
+
 
 
     private static Set<Id> getPOReceivedOpps(
